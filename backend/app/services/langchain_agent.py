@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import Any, Dict, Tuple
 
 from pydantic import BaseModel, Field
@@ -98,17 +99,46 @@ def _requires_llm_response() -> bool:
     return os.getenv("MENTORFLOW_REQUIRE_LLM", "true").strip().lower() not in {"0", "false", "no"}
 
 
+def _uses_llm_router() -> bool:
+    return os.getenv("MENTORFLOW_LLM_ROUTER", "false").strip().lower() in {"1", "true", "yes"}
+
+
+def _safe_provider_message(exc: Exception) -> str:
+    message = str(exc)
+    message = re.sub(r"(api[_-]?key['\"]?\s*[:=]\s*['\"]?)[^,'\"\s}]+", r"\1***", message, flags=re.I)
+    message = re.sub(r"(Bearer\s+)[A-Za-z0-9._-]+", r"\1***", message)
+    return message[:700]
+
+
+def _exception_metadata(exc: Exception, prefix: str) -> Dict[str, str]:
+    data = {
+        f"{prefix}_error": exc.__class__.__name__,
+        f"{prefix}_message": _safe_provider_message(exc),
+    }
+    status_code = getattr(exc, "status_code", None)
+    if status_code is not None:
+        data[f"{prefix}_status_code"] = str(status_code)
+    response = getattr(exc, "response", None)
+    if response is not None and getattr(response, "status_code", None) is not None:
+        data[f"{prefix}_status_code"] = str(response.status_code)
+    return data
+
+
 def _provider_error_response(metadata: Dict[str, str]) -> str:
     model = metadata.get("model", "configured model")
     base_url = metadata.get("base_url", "configured provider")
     error = metadata.get("response_error") or metadata.get("router_error") or "ProviderError"
+    status = metadata.get("response_status_code") or metadata.get("router_status_code")
+    provider_message = metadata.get("response_message") or metadata.get("router_message")
     return (
         "پاسخ آماده برنمی‌گردانم چون حالت AI واقعی فعال است، "
         "اما مدل هوش مصنوعی الان جواب نداد.\n\n"
         f"- Provider: `{base_url}`\n"
         f"- Model: `{model}`\n"
         f"- Error: `{error}`\n\n"
-        "کلید، اعتبار حساب، نام مدل و base URL را بررسی کنید. بعد از درست شدن provider، همین endpoint پاسخ واقعی مدل را برمی‌گرداند."
+        + (f"- Status: `{status}`\n" if status else "")
+        + (f"- Provider message: `{provider_message}`\n\n" if provider_message else "\n")
+        + "این پیام از خود provider آمده است. بعد از درست شدن provider، همین endpoint پاسخ واقعی مدل را برمی‌گرداند."
     )
 
 
@@ -234,7 +264,10 @@ async def _select_tool_with_langchain(
         metadata["router_mode"] = "direct_router_missing_langchain"
         return local_tool, local_topic
 
-    llm = _llm()
+    llm = _llm() if _uses_llm_router() else None
+    if not _uses_llm_router():
+        metadata["router_mode"] = "langchain_local_router_metis_direct_mode"
+
     if llm is not None:
         try:
             router_prompt = ChatPromptTemplate.from_messages(
@@ -267,7 +300,7 @@ Conversation summary: {summary}""",
                 return args.get("tool", local_tool), args.get("topic", local_topic)
         except Exception as exc:  # provider/network dependent
             metadata["router_mode"] = "langchain_router_fallback_after_llm_error"
-            metadata["router_error"] = exc.__class__.__name__
+            metadata.update(_exception_metadata(exc, "router"))
 
     fallback_router = RunnableLambda(lambda data: {"tool": detect_tool(data["message"]), "topic": extract_topic(data["message"])})
     choice = await fallback_router.ainvoke({"message": message})
@@ -366,7 +399,7 @@ Create the final MentorFlow response.""",
             return await chain.ainvoke(chain_input)
         except Exception as exc:  # provider/network dependent
             metadata["response_mode"] = "langchain_provider_error"
-            metadata["response_error"] = exc.__class__.__name__
+            metadata.update(_exception_metadata(exc, "response"))
             if _requires_llm_response():
                 return _provider_error_response(metadata)
 

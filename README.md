@@ -33,6 +33,7 @@ OPENAI_API_KEY=your_metis_api_key_here
 MENTORFLOW_BASE_URL=https://api.metisai.ir/openai/v1
 MENTORFLOW_MODEL=gpt-4o-mini
 MENTORFLOW_REQUIRE_LLM=true
+MENTORFLOW_LLM_ROUTER=false
 ```
 
 For environments blocked by sanctioned providers, such as Colab or Kaggle:
@@ -44,6 +45,9 @@ MENTORFLOW_BASE_URL=https://api.tapsage.com/openai/v1
 `MENTORFLOW_REQUIRE_LLM=true` prevents silent template fallback when a provider
 key is configured. If the AI provider has no credit, rejects the model, or is
 unreachable, the API returns a clear provider error instead of a canned answer.
+`MENTORFLOW_LLM_ROUTER=false` is recommended for Metis direct wrappers because
+the docs note that direct model connections do not expose the full platform
+features such as function calling. The final answer still comes from the LLM.
 
 ## Run Frontend
 
