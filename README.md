@@ -25,20 +25,20 @@ cp ../.env.example ../.env
 uvicorn app.main:app --reload --port 8000
 ```
 
-The included `.env.example` is ready for Metis AI Grok. Use the host that
+The included `.env.example` is ready for Metis OpenAI wrapper. Use the host that
 matches where the app runs:
 
 ```env
 OPENAI_API_KEY=your_metis_api_key_here
-MENTORFLOW_BASE_URL=https://api.metisai.ir/api/v1/wrapper/grok
-MENTORFLOW_MODEL=grok-3-beta
+MENTORFLOW_BASE_URL=https://api.metisai.ir/openai/v1
+MENTORFLOW_MODEL=gpt-4o-mini
 MENTORFLOW_REQUIRE_LLM=true
 ```
 
 For environments blocked by sanctioned providers, such as Colab or Kaggle:
 
 ```env
-MENTORFLOW_BASE_URL=https://api.tapsage.com/api/v1/wrapper/grok
+MENTORFLOW_BASE_URL=https://api.tapsage.com/openai/v1
 ```
 
 `MENTORFLOW_REQUIRE_LLM=true` prevents silent template fallback when a provider

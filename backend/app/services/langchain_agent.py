@@ -75,7 +75,7 @@ Use the tool output as grounded context. Do not invent GitHub facts beyond the t
 def _metadata() -> Dict[str, str]:
     return {
         "agent": "langchain",
-        "model": os.getenv("MENTORFLOW_MODEL", "grok-3-beta"),
+        "model": os.getenv("MENTORFLOW_MODEL", "gpt-4o-mini"),
         "base_url": os.getenv("MENTORFLOW_BASE_URL", "https://api.openai.com/v1"),
     }
 
@@ -84,7 +84,7 @@ def _llm() -> Any | None:
     if not os.getenv("OPENAI_API_KEY") or ChatOpenAI is None:
         return None
     return ChatOpenAI(
-        model=os.getenv("MENTORFLOW_MODEL", "grok-3-beta"),
+        model=os.getenv("MENTORFLOW_MODEL", "gpt-4o-mini"),
         base_url=os.getenv("MENTORFLOW_BASE_URL", "https://api.openai.com/v1"),
         temperature=0.2,
         timeout=20,
