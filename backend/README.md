@@ -6,7 +6,8 @@ FastAPI backend for an educational programming assistant.
 
 - Student-level middleware: Beginner, Intermediate, Advanced
 - Conversation summary and context management
-- LangChain response chain with any OpenAI-compatible chat endpoint
+- LangChain-first agent flow for routing, tool execution, and response generation
+- OpenAI-compatible chat endpoint support through LangChain `ChatOpenAI`
 - Quiz generator
 - Code generator
 - GitHub repository review through GitHub API with fallback checklist

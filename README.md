@@ -4,8 +4,8 @@ MentorFlow is an educational programming assistant with a FastAPI backend and a 
 
 ## Implemented Requirements
 
-- Agent-style routing for quiz, code, GitHub review, learning roadmap and general tutoring
-- LangChain-powered response layer with OpenAI-compatible provider support
+- LangChain-first agent flow for routing, tool execution, and response generation
+- OpenAI-compatible provider support through LangChain `ChatOpenAI`
 - Student level middleware for Beginner, Intermediate and Advanced responses
 - Conversation summary middleware after long conversations
 - Context management for student level, technologies, current roadmap and studied topics
