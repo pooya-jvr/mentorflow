@@ -6,7 +6,6 @@ from app.services.langchain_agent import run_mentor_agent
 
 router = APIRouter()
 
-
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     session_id = request.session_id or "default"

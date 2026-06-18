@@ -32,6 +32,7 @@ matches where the app runs:
 OPENAI_API_KEY=your_metis_api_key_here
 MENTORFLOW_BASE_URL=https://api.metisai.ir/api/v1/wrapper/grok
 MENTORFLOW_MODEL=grok-3-beta
+MENTORFLOW_REQUIRE_LLM=true
 ```
 
 For environments blocked by sanctioned providers, such as Colab or Kaggle:
@@ -39,6 +40,10 @@ For environments blocked by sanctioned providers, such as Colab or Kaggle:
 ```env
 MENTORFLOW_BASE_URL=https://api.tapsage.com/api/v1/wrapper/grok
 ```
+
+`MENTORFLOW_REQUIRE_LLM=true` prevents silent template fallback when a provider
+key is configured. If the AI provider has no credit, rejects the model, or is
+unreachable, the API returns a clear provider error instead of a canned answer.
 
 ## Run Frontend
 

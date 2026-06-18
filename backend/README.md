@@ -33,6 +33,7 @@ wrapper. Use the host that matches where the app is running:
 OPENAI_API_KEY=your_metis_api_key_here
 MENTORFLOW_BASE_URL=https://api.metisai.ir/api/v1/wrapper/grok
 MENTORFLOW_MODEL=grok-3-beta
+MENTORFLOW_REQUIRE_LLM=true
 ```
 
 For environments that are blocked by sanctioned providers, such as Colab or
@@ -43,7 +44,9 @@ MENTORFLOW_BASE_URL=https://api.tapsage.com/api/v1/wrapper/grok
 ```
 
 If the key is not set or the provider rejects the request, MentorFlow uses a
-local LangChain fallback chain so the tools still work during development.
+local LangChain fallback chain only when `MENTORFLOW_REQUIRE_LLM=false`.
+With the default `MENTORFLOW_REQUIRE_LLM=true`, provider errors are shown
+instead of returning a canned answer.
 
 ## API
 

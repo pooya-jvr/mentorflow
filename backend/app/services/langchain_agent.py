@@ -92,6 +92,26 @@ def _llm() -> Any | None:
     )
 
 
+def _requires_llm_response() -> bool:
+    if not os.getenv("OPENAI_API_KEY"):
+        return False
+    return os.getenv("MENTORFLOW_REQUIRE_LLM", "true").strip().lower() not in {"0", "false", "no"}
+
+
+def _provider_error_response(metadata: Dict[str, str]) -> str:
+    model = metadata.get("model", "configured model")
+    base_url = metadata.get("base_url", "configured provider")
+    error = metadata.get("response_error") or metadata.get("router_error") or "ProviderError"
+    return (
+        "پاسخ آماده برنمی‌گردانم چون حالت AI واقعی فعال است، "
+        "اما مدل هوش مصنوعی الان جواب نداد.\n\n"
+        f"- Provider: `{base_url}`\n"
+        f"- Model: `{model}`\n"
+        f"- Error: `{error}`\n\n"
+        "کلید، اعتبار حساب، نام مدل و base URL را بررسی کنید. بعد از درست شدن provider، همین endpoint پاسخ واقعی مدل را برمی‌گرداند."
+    )
+
+
 def _tool_context(context: StudentContext) -> str:
     return json.dumps(
         {
@@ -306,6 +326,9 @@ async def _finalize_with_langchain(
 ) -> str:
     if ChatPromptTemplate is None or RunnableLambda is None or StrOutputParser is None:
         metadata["response_mode"] = "direct_tool_output_missing_langchain"
+        if _requires_llm_response():
+            metadata["response_error"] = "LangChainMissing"
+            return _provider_error_response(metadata)
         return tool_output
 
     prompt = ChatPromptTemplate.from_messages(
@@ -342,8 +365,15 @@ Create the final MentorFlow response.""",
             metadata["response_mode"] = "langchain_llm_response"
             return await chain.ainvoke(chain_input)
         except Exception as exc:  # provider/network dependent
-            metadata["response_mode"] = "langchain_response_fallback_after_llm_error"
+            metadata["response_mode"] = "langchain_provider_error"
             metadata["response_error"] = exc.__class__.__name__
+            if _requires_llm_response():
+                return _provider_error_response(metadata)
+
+    if _requires_llm_response():
+        metadata["response_mode"] = "langchain_provider_not_configured"
+        metadata["response_error"] = "ProviderNotConfigured"
+        return _provider_error_response(metadata)
 
     fallback_chain = prompt | RunnableLambda(lambda data: data.messages[-1].content.split("Tool output:\n", 1)[-1])
     metadata.setdefault("response_mode", "langchain_local_response")
